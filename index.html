@@ -64,6 +64,7 @@
       <div>Letzter Treffer: <span id="lastMatch">—</span></div>
       <div>Status: <span id="status" class="small">Gestoppt</span></div>
       <div>Letzte Zahl: <span id="last" class="small">—</span></div>
+      <div>Durchschnittliche Iterationen pro Treffer: <span id="avg">—</span></div>
     </div>
 
     <h3 style="margin-top:12px">Protokoll (letzte 100)</h3>
@@ -93,12 +94,15 @@
   const statusEl = document.getElementById('status')
   const lastMatchEl = document.getElementById('lastMatch')
   const logEl = document.getElementById('log')
+  const avgEl = document.getElementById('avg')
 
   let running = false
   let intervalId = null
   let rafId = null
   let iterations = 0
   let lastMatch = null
+  let totalMatches = 0
+  let totalIterationsForMatches = 0
   const MAX_LOG = 100
 
   function randInt(min, max) {
@@ -129,6 +133,7 @@
     lastEl.textContent = current
     statusEl.textContent = running ? 'Läuft' : 'Gestoppt'
     if(lastMatch !== null) lastMatchEl.innerHTML = '<span class="found">'+lastMatch+'</span>'
+    if(totalMatches > 0) avgEl.textContent = (totalIterationsForMatches / totalMatches).toFixed(2)
   }
 
   function tickOnce() {
@@ -145,6 +150,8 @@
     log(`[${iterations}] ${n}` + (t !== null ? ` (Ziel ${t})` : ''))
     if(t !== null && n === t) {
       lastMatch = n
+      totalMatches++
+      totalIterationsForMatches += iterations
       log(`>>> TREFFER! Zahl ${n} gefunden nach ${iterations} Iterationen.`, 'found')
       updateUI(n)
       if(stopOnMatch.checked) {
@@ -174,9 +181,7 @@
       rafId = requestAnimationFrame(rafLoop)
     } else {
       intervalId = setInterval(() => {
-        const found = tickOnce()
-        if(found && stopOnMatch.checked) {
-        }
+        tickOnce()
       }, Math.max(0, Number(speedInput.value)))
     }
   }
@@ -194,10 +199,13 @@
     stop()
     iterations = 0
     lastMatch = null
+    totalMatches = 0
+    totalIterationsForMatches = 0
     display.textContent = '—'
     countEl.textContent = '0'
     lastMatchEl.textContent = '—'
     lastEl.textContent = '—'
+    avgEl.textContent = '—'
     logEl.textContent = ''
   }
 
