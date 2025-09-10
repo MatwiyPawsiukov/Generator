@@ -24,6 +24,7 @@
       align-items:center;
       justify-content:center;
       padding:24px;
+      position:relative;
     }
     .card{
       width:920px;
@@ -72,6 +73,37 @@
       margin-left:4px;
     }
     .status-btn.running{background-color:var(--green);}
+    /* Круг із галочкою */
+    .hit-circle{
+      position:fixed;
+      right:30px;
+      top:50%;
+      transform:translateY(-50%);
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      background-color:var(--green);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:60px;
+      color:#0f1724;
+      font-weight:bold;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 0.3s ease;
+      z-index:1000;
+    }
+    .hit-circle.show{
+      opacity:1;
+    }
+    .audio-control{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:12px;
+      margin-left:12px;
+    }
   </style>
 </head>
 <body>
@@ -103,6 +135,9 @@
       <button id="resetBtn">Zurücksetzen</button>
       <label style="display:flex;align-items:center;gap:8px"><input id="stopOnMatch" type="checkbox" checked /> Anhalten bei Treffer</label>
       <label style="display:flex;align-items:center;gap:8px"><input id="useRAF" type="checkbox" /> requestAnimationFrame bei Geschwindigkeit = 0 nutzen</label>
+      <div class="audio-control">
+        <input type="checkbox" id="soundToggle" checked /> Ton bei Treffer
+      </div>
     </div>
 
     <div class="big" id="display">—</div>
@@ -126,6 +161,13 @@
     </footer>
   </div>
 
+  <!-- Круг із галочкою -->
+  <div class="hit-circle" id="hitCircle">✔</div>
+  <!-- Звуковий ефект -->
+  <audio id="hitSound">
+    <source src="./completion sound final.ogg" type="audio/mpeg">
+  </audio>
+
 <script>
 (() => {
   const minInput = document.getElementById('min')
@@ -138,6 +180,7 @@
   const resetBtn = document.getElementById('resetBtn')
   const stopOnMatch = document.getElementById('stopOnMatch')
   const useRAF = document.getElementById('useRAF')
+  const soundToggle = document.getElementById('soundToggle')
 
   const display = document.getElementById('display')
   const countEl = document.getElementById('count')
@@ -150,6 +193,8 @@
   const statusBtn = document.getElementById('statusBtn')
   const timerEl = document.getElementById('timer')
   const totalIterEl = document.getElementById('totalIter')
+  const hitCircle = document.getElementById('hitCircle')
+  const hitSound = document.getElementById('hitSound')
 
   let running = false
   let intervalId = null
@@ -185,6 +230,12 @@
     return {ok:true,min,max}
   }
 
+  function showHitCircle() {
+    hitCircle.classList.add('show')
+    if(soundToggle.checked) hitSound.play()
+    setTimeout(() => hitCircle.classList.remove('show'), 1000)
+  }
+
   function updateUI(current) {
     display.textContent = current
     countEl.textContent = iterations
@@ -216,6 +267,7 @@
       totalMatches++
       totalIterationsForMatches += iterations
       log(`>>> TREFFER! Zahl ${n} gefunden nach ${iterations} Iterationen.`, 'found')
+      showHitCircle()
       updateUI(n)
       if(stopOnMatch.checked) stop()
       iterations = 0
