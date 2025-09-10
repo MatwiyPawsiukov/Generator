@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schneller Zufallszahlengenerator</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#60a5fa;--muted:#9aa7bf;--good:#10b981;--bad:#ef4444}
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,system-ui,Arial;background:linear-gradient(180deg,var(--bg),#071028);color:#e6eef8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:920px;max-width:100%;background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+    h1{margin:0 0 8px;font-size:20px}
+    .row{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    label{font-size:13px;color:var(--muted)}
+    input[type=number], input[type=range], button, select{background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px}
+    input[type=number]{width:120px}
+    button{cursor:pointer}
+    .big{font-size:48px;font-weight:700;letter-spacing:1px;text-align:center;padding:18px;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));margin:8px 0}
+    .meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .meta div{font-size:13px;color:var(--muted)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .log{max-height:160px;overflow:auto;background:rgba(0,0,0,0.2);padding:8px;border-radius:8px;font-family:monospace;font-size:13px}
+    .found{color:var(--good);font-weight:700}
+    .warning{color:var(--bad)}
+    .small{font-size:12px;color:var(--muted)}
+    footer{margin-top:12px;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Schneller Zufallszahlengenerator</h1>
+    <div class="row">
+      <div>
+        <label>Minimum</label><br>
+        <input id="min" type="number" value="0" />
+      </div>
+      <div>
+        <label>Maximum</label><br>
+        <input id="max" type="number" value="1000" />
+      </div>
+      <div>
+        <label>Zielzahl (stoppt, wenn getroffen)</label><br>
+        <input id="target" type="number" placeholder="z.B. 43" />
+      </div>
+      <div style="min-width:180px">
+        <label>Geschwindigkeit (ms — Intervall, 0 = maximal schnell)</label><br>
+        <input id="speed" type="range" min="0" max="1000" value="16" />
+        <div class="small">Aktuelle Geschwindigkeit: <span id="speedValue">16</span> ms</div>
+      </div>
+    </div>
+
+    <div class="row controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stopp</button>
+      <button id="resetBtn">Zurücksetzen</button>
+      <label style="display:flex;align-items:center;gap:8px"><input id="stopOnMatch" type="checkbox" checked /> Anhalten bei Treffer</label>
+      <label style="display:flex;align-items:center;gap:8px"><input id="useRAF" type="checkbox" /> requestAnimationFrame bei Geschwindigkeit = 0 nutzen</label>
+    </div>
+
+    <div class="big" id="display">—</div>
+
+    <div class="meta">
+      <div>Iterationen: <span id="count">0</span></div>
+      <div>Letzter Treffer: <span id="lastMatch">—</span></div>
+      <div>Status: <span id="status" class="small">Gestoppt</span></div>
+      <div>Letzte Zahl: <span id="last" class="small">—</span></div>
+    </div>
+
+    <h3 style="margin-top:12px">Protokoll (letzte 100)</h3>
+    <div class="log" id="log"></div>
+
+    <footer>
+      Tipp: Für maximale Geschwindigkeit Geschwindigkeit auf 0 stellen und RAF aktivieren. Die UI aktualisiert sich mit der Bildwiederholrate des Browsers.
+    </footer>
+  </div>
+
+<script>
+(() => {
+  const minInput = document.getElementById('min')
+  const maxInput = document.getElementById('max')
+  const targetInput = document.getElementById('target')
+  const speedInput = document.getElementById('speed')
+  const speedValue = document.getElementById('speedValue')
+  const startBtn = document.getElementById('startBtn')
+  const stopBtn = document.getElementById('stopBtn')
+  const resetBtn = document.getElementById('resetBtn')
+  const stopOnMatch = document.getElementById('stopOnMatch')
+  const useRAF = document.getElementById('useRAF')
+
+  const display = document.getElementById('display')
+  const countEl = document.getElementById('count')
+  const lastEl = document.getElementById('last')
+  const statusEl = document.getElementById('status')
+  const lastMatchEl = document.getElementById('lastMatch')
+  const logEl = document.getElementById('log')
+
+  let running = false
+  let intervalId = null
+  let rafId = null
+  let iterations = 0
+  let lastMatch = null
+  const MAX_LOG = 100
+
+  function randInt(min, max) {
+    min = Math.ceil(min)
+    max = Math.floor(max)
+    return Math.floor(Math.random() * (max - min + 1)) + min
+  }
+
+  function log(msg, cls) {
+    const line = document.createElement('div')
+    if(cls) line.className = cls
+    line.textContent = msg
+    logEl.prepend(line)
+    while(logEl.childElementCount > MAX_LOG) logEl.removeChild(logEl.lastChild)
+  }
+
+  function validateRange() {
+    const min = Number(minInput.value)
+    const max = Number(maxInput.value)
+    if(Number.isNaN(min) || Number.isNaN(max)) return {ok:false,reason:'ungültig'}
+    if(min > max) return {ok:false,reason:'min>max'}
+    return {ok:true,min,max}
+  }
+
+  function updateUI(current) {
+    display.textContent = current
+    countEl.textContent = iterations
+    lastEl.textContent = current
+    statusEl.textContent = running ? 'Läuft' : 'Gestoppt'
+    if(lastMatch !== null) lastMatchEl.innerHTML = '<span class="found">'+lastMatch+'</span>'
+  }
+
+  function tickOnce() {
+    const vr = validateRange()
+    if(!vr.ok) {
+      statusEl.textContent = 'Ungültiger Bereich'
+      statusEl.classList.add('warning')
+      return false
+    }
+    const n = randInt(vr.min, vr.max)
+    iterations++
+    updateUI(n)
+    const t = targetInput.value === '' ? null : Number(targetInput.value)
+    log(`[${iterations}] ${n}` + (t !== null ? ` (Ziel ${t})` : ''))
+    if(t !== null && n === t) {
+      lastMatch = n
+      log(`>>> TREFFER! Zahl ${n} gefunden nach ${iterations} Iterationen.`, 'found')
+      updateUI(n)
+      if(stopOnMatch.checked) {
+        stop();
+      }
+      return true
+    }
+    return false
+  }
+
+  function start() {
+    if(running) return
+    const vr = validateRange()
+    if(!vr.ok) { alert('Bitte Minimum und Maximum prüfen — Minimum muss <= Maximum sein.'); return }
+    running = true
+    statusEl.textContent = 'Läuft'
+    startBtn.disabled = true
+    stopBtn.disabled = false
+
+    const speed = Number(speedInput.value)
+    if(speed === 0 && useRAF.checked) {
+      function rafLoop() {
+        if(!running) return
+        tickOnce()
+        rafId = requestAnimationFrame(rafLoop)
+      }
+      rafId = requestAnimationFrame(rafLoop)
+    } else {
+      intervalId = setInterval(() => {
+        const found = tickOnce()
+        if(found && stopOnMatch.checked) {
+        }
+      }, Math.max(0, Number(speedInput.value)))
+    }
+  }
+
+  function stop() {
+    running = false
+    startBtn.disabled = false
+    stopBtn.disabled = true
+    statusEl.textContent = 'Gestoppt'
+    if(intervalId) { clearInterval(intervalId); intervalId = null }
+    if(rafId) { cancelAnimationFrame(rafId); rafId = null }
+  }
+
+  function reset() {
+    stop()
+    iterations = 0
+    lastMatch = null
+    display.textContent = '—'
+    countEl.textContent = '0'
+    lastMatchEl.textContent = '—'
+    lastEl.textContent = '—'
+    logEl.textContent = ''
+  }
+
+  speedInput.addEventListener('input', () => { speedValue.textContent = speedInput.value })
+  startBtn.addEventListener('click', start)
+  stopBtn.addEventListener('click', stop)
+  resetBtn.addEventListener('click', reset)
+
+  window.addEventListener('keydown', (e) => {
+    if(e.code === 'Space') { e.preventDefault(); running ? stop() : start() }
+    if(e.key.toLowerCase() === 'r') { reset() }
+  })
+
+})();
+</script>
+</body>
+</html>
