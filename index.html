@@ -12,6 +12,7 @@
       --muted:#9aa7bf;
       --good:#10b981;
       --bad:#ef4444;
+      --green:#10b981;
     }
     *{box-sizing:border-box}
     body{
@@ -62,6 +63,15 @@
     .warning{color:var(--bad)}
     .small{font-size:12px;color:var(--muted)}
     footer{margin-top:12px;font-size:12px;color:var(--muted)}
+    .status-btn{
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      display:inline-block;
+      background-color:var(--bad);
+      margin-left:4px;
+    }
+    .status-btn.running{background-color:var(--green);}
   </style>
 </head>
 <body>
@@ -100,10 +110,12 @@
     <div class="meta">
       <div>Iterationen: <span id="count">0</span></div>
       <div>Letzter Treffer: <span id="lastMatch">—</span></div>
-      <div>Status: <span id="status" class="small">Gestoppt</span></div>
+      <div>Status: <span id="status" class="small">Gestoppt</span><span class="status-btn" id="statusBtn"></span></div>
       <div>Letzte Zahl: <span id="last" class="small">—</span></div>
       <div>Durchschnittliche Iterationen pro Treffer: <span id="avg">—</span></div>
       <div>Gesamttreffer: <span id="totalHits">0</span></div>
+      <div>Timer: <span id="timer">0s</span></div>
+      <div>Gesamtiterationen: <span id="totalIter">0</span></div>
     </div>
 
     <h3 style="margin-top:12px">Protokoll (letzte 100)</h3>
@@ -135,6 +147,9 @@
   const logEl = document.getElementById('log')
   const avgEl = document.getElementById('avg')
   const totalHitsEl = document.getElementById('totalHits')
+  const statusBtn = document.getElementById('statusBtn')
+  const timerEl = document.getElementById('timer')
+  const totalIterEl = document.getElementById('totalIter')
 
   let running = false
   let intervalId = null
@@ -143,6 +158,9 @@
   let lastMatch = null
   let totalMatches = 0
   let totalIterationsForMatches = 0
+  let sessionTotalIterations = 0
+  let elapsedSeconds = 0
+  let timerInterval = null
   const MAX_LOG = 100
 
   function randInt(min, max) {
@@ -172,9 +190,12 @@
     countEl.textContent = iterations
     lastEl.textContent = current
     statusEl.textContent = running ? 'Läuft' : 'Gestoppt'
+    statusBtn.classList.toggle('running', running)
     if(lastMatch !== null) lastMatchEl.innerHTML = '<span class="found">'+lastMatch+'</span>'
     avgEl.textContent = totalMatches > 0 ? (totalIterationsForMatches / totalMatches).toFixed(2) : '—'
     totalHitsEl.textContent = totalMatches
+    totalIterEl.textContent = sessionTotalIterations
+    timerEl.textContent = elapsedSeconds + 's'
   }
 
   function tickOnce() {
@@ -186,6 +207,7 @@
     }
     const n = randInt(vr.min, vr.max)
     iterations++
+    sessionTotalIterations++
     updateUI(n)
     const t = targetInput.value === '' ? null : Number(targetInput.value)
     log(`[${iterations}] ${n}` + (t !== null ? ` (Ziel ${t})` : ''))
@@ -195,13 +217,21 @@
       totalIterationsForMatches += iterations
       log(`>>> TREFFER! Zahl ${n} gefunden nach ${iterations} Iterationen.`, 'found')
       updateUI(n)
-      if(stopOnMatch.checked) {
-        stop()
-      }
+      if(stopOnMatch.checked) stop()
       iterations = 0
       return true
     }
     return false
+  }
+
+  function startTimer() {
+    if(timerInterval) clearInterval(timerInterval)
+    timerInterval = setInterval(() => {
+      if(running) {
+        elapsedSeconds++
+        updateUI(lastEl.textContent)
+      }
+    }, 1000)
   }
 
   function start() {
@@ -209,9 +239,9 @@
     const vr = validateRange()
     if(!vr.ok) { alert('Bitte Minimum und Maximum prüfen — Minimum muss <= Maximum sein.'); return }
     running = true
-    statusEl.textContent = 'Läuft'
     startBtn.disabled = true
     stopBtn.disabled = false
+    startTimer()
 
     const speed = Number(speedInput.value)
     if(speed === 0 && useRAF.checked) {
@@ -226,15 +256,16 @@
         tickOnce()
       }, Math.max(0, Number(speedInput.value)))
     }
+    updateUI(lastEl.textContent)
   }
 
   function stop() {
     running = false
     startBtn.disabled = false
     stopBtn.disabled = true
-    statusEl.textContent = 'Gestoppt'
     if(intervalId) { clearInterval(intervalId); intervalId = null }
     if(rafId) { cancelAnimationFrame(rafId); rafId = null }
+    updateUI(lastEl.textContent)
   }
 
   function reset() {
@@ -243,12 +274,16 @@
     lastMatch = null
     totalMatches = 0
     totalIterationsForMatches = 0
+    sessionTotalIterations = 0
+    elapsedSeconds = 0
     display.textContent = '—'
     countEl.textContent = '0'
     lastMatchEl.textContent = '—'
     lastEl.textContent = '—'
     avgEl.textContent = '—'
     totalHitsEl.textContent = '0'
+    totalIterEl.textContent = '0'
+    timerEl.textContent = '0s'
     logEl.textContent = ''
   }
 
