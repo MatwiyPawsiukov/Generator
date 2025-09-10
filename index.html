@@ -9,90 +9,121 @@
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
-      background: #f4f4f9;
-      color: #333;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a); /* темно-синій градієнт */
+      color: #f1f5f9;
     }
 
     h1 {
       margin-bottom: 20px;
+      font-size: 34px;
+      color: #93c5fd; /* світло-блакитний */
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
     }
 
     input, button {
-      padding: 10px;
-      margin: 5px;
+      padding: 10px 14px;
+      margin: 6px;
       font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      outline: none;
+      background: #1e293b; /* темно-сірий/синій */
+      color: #e2e8f0;
+    }
+
+    input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
     }
 
     button {
       cursor: pointer;
-      background: #0077cc;
+      background: #2563eb; /* насичений синій */
       color: white;
       border: none;
-      transition: background 0.3s ease;
+      transition: background 0.3s ease, transform 0.1s ease;
     }
 
     button:hover {
-      background: #005fa3;
+      background: #1d4ed8;
+    }
+
+    button:active {
+      transform: scale(0.95);
     }
 
     #result {
-      font-size: 28px;
+      font-size: 36px;
       margin: 20px 0;
       font-weight: bold;
+      color: #facc15; /* жовтий для акценту */
+      text-shadow: 0 2px 4px rgba(0,0,0,0.7);
     }
 
     #history {
       margin-top: 20px;
       max-height: 200px;
       overflow-y: auto;
-      border: 1px solid #ccc;
+      border: 1px solid #334155;
       padding: 10px;
-      background: #fff;
-      border-radius: 6px;
+      background: #0f172a;
+      border-radius: 8px;
+      text-align: left;
+      color: #cbd5e1;
     }
 
     #stats {
       margin-top: 20px;
       font-size: 18px;
-      background: #eaeaea;
+      background: #1e3a8a;
       padding: 15px 20px;
-      border-radius: 10px;
+      border-radius: 12px;
       display: inline-block;
       text-align: left;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      color: #e0f2fe;
+    }
+
+    #stats div {
+      margin: 6px 0;
     }
   </style>
 </head>
 <body>
   <h1>Zufallszahlengenerator</h1>
+
   <div>
     <label for="min">Min:</label>
     <input type="number" id="min" value="0">
     <label for="max">Max:</label>
     <input type="number" id="max" value="100">
   </div>
+
   <div>
     <label for="target">Zielzahl:</label>
     <input type="number" id="target" placeholder="z.B. 43">
   </div>
+
   <div>
     <label for="speed">Geschwindigkeit (ms):</label>
     <input type="number" id="speed" value="50" min="0">
     <label><input type="checkbox" id="useRaf"> Maximale Geschwindigkeit (RAF)</label>
   </div>
+
   <div>
     <button id="start">Start</button>
     <button id="stop">Stopp</button>
     <button id="reset">Zurücksetzen</button>
   </div>
+
   <div id="result">-</div>
+
   <div id="stats">
     <div>Gesamttreffer: <span id="totalHits">0</span></div>
     <div>Durchschnittliche Iterationen: <span id="avgIterations">0</span></div>
     <div>Letzte Iterationen: <span id="lastIterations">0</span></div>
   </div>
+
   <div id="history"></div>
 
   <script>
@@ -132,7 +163,7 @@
       if (target !== '' && parseInt(target) === random) {
         stopGenerator();
         resultEl.innerText = `Treffer! Zahl ${random}`;
-        resultEl.style.color = 'green';
+        resultEl.style.color = '#22c55e'; // зелений при попаданні
 
         totalHits++;
         totalIterations += counter;
@@ -142,7 +173,7 @@
 
         counter = 0;
       } else {
-        resultEl.style.color = 'black';
+        resultEl.style.color = '#facc15'; // жовтий при звичайному
       }
     }
 
@@ -172,7 +203,7 @@
     function resetGenerator() {
       stopGenerator();
       resultEl.innerText = '-';
-      resultEl.style.color = 'black';
+      resultEl.style.color = '#facc15';
       historyEl.innerHTML = '';
       counter = 0;
       totalHits = 0;
