@@ -1,229 +1,268 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zufallszahlengenerator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schneller Zufallszahlengenerator</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background: linear-gradient(135deg, #0f172a, #1e3a8a); /* темно-синій градієнт */
-      color: #f1f5f9;
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#60a5fa;
+      --muted:#9aa7bf;
+      --good:#10b981;
+      --bad:#ef4444;
     }
-
-    h1 {
-      margin-bottom: 20px;
-      font-size: 34px;
-      color: #93c5fd; /* світло-блакитний */
-      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    *{box-sizing:border-box}
+    body{
+      font-family:Inter,Segoe UI,system-ui,Arial;
+      background:linear-gradient(180deg,var(--bg),#071028);
+      color:#e6eef8;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
     }
-
-    input, button {
-      padding: 10px 14px;
-      margin: 6px;
-      font-size: 16px;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      outline: none;
-      background: #1e293b; /* темно-сірий/синій */
-      color: #e2e8f0;
+    .card{
+      width:920px;
+      max-width:100%;
+      background:rgba(255,255,255,0.03);
+      border-radius:12px;
+      padding:20px;
+      box-shadow:0 8px 30px rgba(2,6,23,0.6);
     }
-
-    input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+    h1{margin:0 0 8px;font-size:20px}
+    .row{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    label{font-size:13px;color:var(--muted)}
+    input[type=number], input[type=range], button, select{
+      background:transparent;
+      color:inherit;
+      border:1px solid rgba(255,255,255,0.06);
+      padding:8px;
+      border-radius:8px;
     }
-
-    button {
-      cursor: pointer;
-      background: #2563eb; /* насичений синій */
-      color: white;
-      border: none;
-      transition: background 0.3s ease, transform 0.1s ease;
+    input[type=number]{width:120px}
+    button{cursor:pointer}
+    .big{
+      font-size:48px;
+      font-weight:700;
+      letter-spacing:1px;
+      text-align:center;
+      padding:18px;
+      border-radius:10px;
+      background:linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));
+      margin:8px 0;
     }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
-    button:active {
-      transform: scale(0.95);
-    }
-
-    #result {
-      font-size: 36px;
-      margin: 20px 0;
-      font-weight: bold;
-      color: #facc15; /* жовтий для акценту */
-      text-shadow: 0 2px 4px rgba(0,0,0,0.7);
-    }
-
-    #history {
-      margin-top: 20px;
-      max-height: 200px;
-      overflow-y: auto;
-      border: 1px solid #334155;
-      padding: 10px;
-      background: #0f172a;
-      border-radius: 8px;
-      text-align: left;
-      color: #cbd5e1;
-    }
-
-    #stats {
-      margin-top: 20px;
-      font-size: 18px;
-      background: #1e3a8a;
-      padding: 15px 20px;
-      border-radius: 12px;
-      display: inline-block;
-      text-align: left;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-      color: #e0f2fe;
-    }
-
-    #stats div {
-      margin: 6px 0;
-    }
+    .meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .meta div{font-size:13px;color:var(--muted)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .log{max-height:160px;overflow:auto;background:rgba(0,0,0,0.2);padding:8px;border-radius:8px;font-family:monospace;font-size:13px}
+    .found{color:var(--good);font-weight:700}
+    .warning{color:var(--bad)}
+    .small{font-size:12px;color:var(--muted)}
+    footer{margin-top:12px;font-size:12px;color:var(--muted)}
   </style>
 </head>
 <body>
-  <h1>Zufallszahlengenerator</h1>
+  <div class="card">
+    <h1>Schneller Zufallszahlengenerator</h1>
+    <div class="row">
+      <div>
+        <label>Minimum</label><br>
+        <input id="min" type="number" value="0" />
+      </div>
+      <div>
+        <label>Maximum</label><br>
+        <input id="max" type="number" value="1000" />
+      </div>
+      <div>
+        <label>Zielzahl (stoppt, wenn getroffen)</label><br>
+        <input id="target" type="number" placeholder="z.B. 43" />
+      </div>
+      <div style="min-width:180px">
+        <label>Geschwindigkeit (ms — Intervall, 0 = maximal schnell)</label><br>
+        <input id="speed" type="range" min="0" max="1000" value="16" />
+        <div class="small">Aktuelle Geschwindigkeit: <span id="speedValue">16</span> ms</div>
+      </div>
+    </div>
 
-  <div>
-    <label for="min">Min:</label>
-    <input type="number" id="min" value="0">
-    <label for="max">Max:</label>
-    <input type="number" id="max" value="100">
+    <div class="row controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stopp</button>
+      <button id="resetBtn">Zurücksetzen</button>
+      <label style="display:flex;align-items:center;gap:8px"><input id="stopOnMatch" type="checkbox" checked /> Anhalten bei Treffer</label>
+      <label style="display:flex;align-items:center;gap:8px"><input id="useRAF" type="checkbox" /> requestAnimationFrame bei Geschwindigkeit = 0 nutzen</label>
+    </div>
+
+    <div class="big" id="display">—</div>
+
+    <div class="meta">
+      <div>Iterationen: <span id="count">0</span></div>
+      <div>Letzter Treffer: <span id="lastMatch">—</span></div>
+      <div>Status: <span id="status" class="small">Gestoppt</span></div>
+      <div>Letzte Zahl: <span id="last" class="small">—</span></div>
+      <div>Durchschnittliche Iterationen pro Treffer: <span id="avg">—</span></div>
+      <div>Gesamttreffer: <span id="totalHits">0</span></div>
+    </div>
+
+    <h3 style="margin-top:12px">Protokoll (letzte 100)</h3>
+    <div class="log" id="log"></div>
+
+    <footer>
+      Tipp: Für maximale Geschwindigkeit Geschwindigkeit auf 0 stellen und RAF aktivieren. Die UI aktualisiert sich mit der Bildwiederholrate des Browsers.
+    </footer>
   </div>
 
-  <div>
-    <label for="target">Zielzahl:</label>
-    <input type="number" id="target" placeholder="z.B. 43">
-  </div>
+<script>
+(() => {
+  const minInput = document.getElementById('min')
+  const maxInput = document.getElementById('max')
+  const targetInput = document.getElementById('target')
+  const speedInput = document.getElementById('speed')
+  const speedValue = document.getElementById('speedValue')
+  const startBtn = document.getElementById('startBtn')
+  const stopBtn = document.getElementById('stopBtn')
+  const resetBtn = document.getElementById('resetBtn')
+  const stopOnMatch = document.getElementById('stopOnMatch')
+  const useRAF = document.getElementById('useRAF')
 
-  <div>
-    <label for="speed">Geschwindigkeit (ms):</label>
-    <input type="number" id="speed" value="50" min="0">
-    <label><input type="checkbox" id="useRaf"> Maximale Geschwindigkeit (RAF)</label>
-  </div>
+  const display = document.getElementById('display')
+  const countEl = document.getElementById('count')
+  const lastEl = document.getElementById('last')
+  const statusEl = document.getElementById('status')
+  const lastMatchEl = document.getElementById('lastMatch')
+  const logEl = document.getElementById('log')
+  const avgEl = document.getElementById('avg')
+  const totalHitsEl = document.getElementById('totalHits')
 
-  <div>
-    <button id="start">Start</button>
-    <button id="stop">Stopp</button>
-    <button id="reset">Zurücksetzen</button>
-  </div>
+  let running = false
+  let intervalId = null
+  let rafId = null
+  let iterations = 0
+  let lastMatch = null
+  let totalMatches = 0
+  let totalIterationsForMatches = 0
+  const MAX_LOG = 100
 
-  <div id="result">-</div>
+  function randInt(min, max) {
+    min = Math.ceil(min)
+    max = Math.floor(max)
+    return Math.floor(Math.random() * (max - min + 1)) + min
+  }
 
-  <div id="stats">
-    <div>Gesamttreffer: <span id="totalHits">0</span></div>
-    <div>Durchschnittliche Iterationen: <span id="avgIterations">0</span></div>
-    <div>Letzte Iterationen: <span id="lastIterations">0</span></div>
-  </div>
+  function log(msg, cls) {
+    const line = document.createElement('div')
+    if(cls) line.className = cls
+    line.textContent = msg
+    logEl.prepend(line)
+    while(logEl.childElementCount > MAX_LOG) logEl.removeChild(logEl.lastChild)
+  }
 
-  <div id="history"></div>
+  function validateRange() {
+    const min = Number(minInput.value)
+    const max = Number(maxInput.value)
+    if(Number.isNaN(min) || Number.isNaN(max)) return {ok:false,reason:'ungültig'}
+    if(min > max) return {ok:false,reason:'min>max'}
+    return {ok:true,min,max}
+  }
 
-  <script>
-    let intervalId;
-    let running = false;
-    let counter = 0;
-    let totalHits = 0;
-    let totalIterations = 0;
+  function updateUI(current) {
+    display.textContent = current
+    countEl.textContent = iterations
+    lastEl.textContent = current
+    statusEl.textContent = running ? 'Läuft' : 'Gestoppt'
+    if(lastMatch !== null) lastMatchEl.innerHTML = '<span class="found">'+lastMatch+'</span>'
+    avgEl.textContent = totalMatches > 0 ? (totalIterationsForMatches / totalMatches).toFixed(2) : '—'
+    totalHitsEl.textContent = totalMatches
+  }
 
-    const resultEl = document.getElementById('result');
-    const historyEl = document.getElementById('history');
-    const avgEl = document.getElementById('avgIterations');
-    const lastEl = document.getElementById('lastIterations');
-    const totalEl = document.getElementById('totalHits');
-
-    function generateNumber() {
-      const min = parseInt(document.getElementById('min').value);
-      const max = parseInt(document.getElementById('max').value);
-      const target = document.getElementById('target').value;
-
-      if (isNaN(min) || isNaN(max) || min > max) {
-        resultEl.innerText = "Ungültiger Bereich!";
-        stopGenerator();
-        return;
-      }
-
-      const random = Math.floor(Math.random() * (max - min + 1)) + min;
-      resultEl.innerText = random;
-
-      historyEl.innerHTML = random + '<br>' + historyEl.innerHTML;
-      if (historyEl.childNodes.length > 100) {
-        historyEl.removeChild(historyEl.lastChild);
-      }
-
-      counter++;
-
-      if (target !== '' && parseInt(target) === random) {
-        stopGenerator();
-        resultEl.innerText = `Treffer! Zahl ${random}`;
-        resultEl.style.color = '#22c55e'; // зелений при попаданні
-
-        totalHits++;
-        totalIterations += counter;
-        totalEl.innerText = totalHits;
-        avgEl.innerText = (totalIterations / totalHits).toFixed(2);
-        lastEl.innerText = counter;
-
-        counter = 0;
-      } else {
-        resultEl.style.color = '#facc15'; // жовтий при звичайному
-      }
+  function tickOnce() {
+    const vr = validateRange()
+    if(!vr.ok) {
+      statusEl.textContent = 'Ungültiger Bereich'
+      statusEl.classList.add('warning')
+      return false
     }
-
-    function startGenerator() {
-      if (running) return;
-      running = true;
-      const speed = parseInt(document.getElementById('speed').value);
-      const useRaf = document.getElementById('useRaf').checked;
-
-      if (useRaf) {
-        function loop() {
-          if (!running) return;
-          generateNumber();
-          requestAnimationFrame(loop);
-        }
-        loop();
-      } else {
-        intervalId = setInterval(generateNumber, speed);
+    const n = randInt(vr.min, vr.max)
+    iterations++
+    updateUI(n)
+    const t = targetInput.value === '' ? null : Number(targetInput.value)
+    log(`[${iterations}] ${n}` + (t !== null ? ` (Ziel ${t})` : ''))
+    if(t !== null && n === t) {
+      lastMatch = n
+      totalMatches++
+      totalIterationsForMatches += iterations
+      log(`>>> TREFFER! Zahl ${n} gefunden nach ${iterations} Iterationen.`, 'found')
+      updateUI(n)
+      if(stopOnMatch.checked) {
+        stop()
       }
+      iterations = 0
+      return true
     }
+    return false
+  }
 
-    function stopGenerator() {
-      running = false;
-      clearInterval(intervalId);
-    }
+  function start() {
+    if(running) return
+    const vr = validateRange()
+    if(!vr.ok) { alert('Bitte Minimum und Maximum prüfen — Minimum muss <= Maximum sein.'); return }
+    running = true
+    statusEl.textContent = 'Läuft'
+    startBtn.disabled = true
+    stopBtn.disabled = false
 
-    function resetGenerator() {
-      stopGenerator();
-      resultEl.innerText = '-';
-      resultEl.style.color = '#facc15';
-      historyEl.innerHTML = '';
-      counter = 0;
-      totalHits = 0;
-      totalIterations = 0;
-      avgEl.innerText = '0';
-      lastEl.innerText = '0';
-      totalEl.innerText = '0';
-    }
-
-    document.getElementById('start').addEventListener('click', startGenerator);
-    document.getElementById('stop').addEventListener('click', stopGenerator);
-    document.getElementById('reset').addEventListener('click', resetGenerator);
-
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') {
-        if (running) stopGenerator(); else startGenerator();
-      } else if (e.code === 'KeyR') {
-        resetGenerator();
+    const speed = Number(speedInput.value)
+    if(speed === 0 && useRAF.checked) {
+      function rafLoop() {
+        if(!running) return
+        tickOnce()
+        rafId = requestAnimationFrame(rafLoop)
       }
-    });
-  </script>
+      rafId = requestAnimationFrame(rafLoop)
+    } else {
+      intervalId = setInterval(() => {
+        tickOnce()
+      }, Math.max(0, Number(speedInput.value)))
+    }
+  }
+
+  function stop() {
+    running = false
+    startBtn.disabled = false
+    stopBtn.disabled = true
+    statusEl.textContent = 'Gestoppt'
+    if(intervalId) { clearInterval(intervalId); intervalId = null }
+    if(rafId) { cancelAnimationFrame(rafId); rafId = null }
+  }
+
+  function reset() {
+    stop()
+    iterations = 0
+    lastMatch = null
+    totalMatches = 0
+    totalIterationsForMatches = 0
+    display.textContent = '—'
+    countEl.textContent = '0'
+    lastMatchEl.textContent = '—'
+    lastEl.textContent = '—'
+    avgEl.textContent = '—'
+    totalHitsEl.textContent = '0'
+    logEl.textContent = ''
+  }
+
+  speedInput.addEventListener('input', () => { speedValue.textContent = speedInput.value })
+  startBtn.addEventListener('click', start)
+  stopBtn.addEventListener('click', stop)
+  resetBtn.addEventListener('click', reset)
+
+  window.addEventListener('keydown', (e) => {
+    if(e.code === 'Space') { e.preventDefault(); running ? stop() : start() }
+    if(e.key.toLowerCase() === 'r') { reset() }
+  })
+
+})();
+</script>
 </body>
 </html>
