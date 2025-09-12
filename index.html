@@ -163,7 +163,8 @@
 
   <!-- Круг із галочкою -->
   <div class="hit-circle" id="hitCircle">✔</div>
-  <!-- Звуковий ефект -->
+
+  <!-- Тут ви вставляєте свій звук -->
   <audio id="hitSound">
     <source src="./completion sound finallll.ogg" type="audio/mpeg">
   </audio>
@@ -232,7 +233,10 @@
 
   function showHitCircle() {
     hitCircle.classList.add('show')
-    if(soundToggle.checked) hitSound.play()
+    if(soundToggle.checked){
+      const snd = hitSound.cloneNode(true)
+      snd.play()
+    }
     setTimeout(() => hitCircle.classList.remove('show'), 1000)
   }
 
