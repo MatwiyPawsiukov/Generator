@@ -94,9 +94,7 @@
       transition:opacity 0.3s ease;
       z-index:1000;
     }
-    .hit-circle.show{
-      opacity:1;
-    }
+    .hit-circle.show{opacity:1;}
     .audio-control{
       display:flex;
       align-items:center;
@@ -107,8 +105,9 @@
   </style>
 </head>
 <body>
+  
   <div class="card">
-    <h1>Schneller Zufallszahlengenerator</h1>
+    <h1>Schneller Zufallszahlengenerator Es tut mir leid... emanuel</h1>
     <div class="row">
       <div>
         <label>Minimum</label><br>
@@ -133,6 +132,7 @@
       <button id="startBtn">Start</button>
       <button id="stopBtn" disabled>Stopp</button>
       <button id="resetBtn">Zurücksetzen</button>
+      <button id="singleBtn">Einzelschritt</button>
       <label style="display:flex;align-items:center;gap:8px"><input id="stopOnMatch" type="checkbox" checked /> Anhalten bei Treffer</label>
       <label style="display:flex;align-items:center;gap:8px"><input id="useRAF" type="checkbox" /> requestAnimationFrame bei Geschwindigkeit = 0 nutzen</label>
       <div class="audio-control">
@@ -164,9 +164,9 @@
   <!-- Круг із галочкою -->
   <div class="hit-circle" id="hitCircle">✔</div>
 
-  <!-- Тут ви вставляєте свій звук -->
+  <!-- Ваш звук -->
   <audio id="hitSound">
-    <source src="./completion sound finallll.ogg" type="audio/mpeg">
+    <source src="dein_sound.mp3" type="audio/mpeg">
   </audio>
 
 <script>
@@ -179,6 +179,7 @@
   const startBtn = document.getElementById('startBtn')
   const stopBtn = document.getElementById('stopBtn')
   const resetBtn = document.getElementById('resetBtn')
+  const singleBtn = document.getElementById('singleBtn')
   const stopOnMatch = document.getElementById('stopOnMatch')
   const useRAF = document.getElementById('useRAF')
   const soundToggle = document.getElementById('soundToggle')
@@ -241,9 +242,9 @@
   }
 
   function updateUI(current) {
-    display.textContent = current
+    display.textContent = current ?? '—'
     countEl.textContent = iterations
-    lastEl.textContent = current
+    lastEl.textContent = current ?? '—'
     statusEl.textContent = running ? 'Läuft' : 'Gestoppt'
     statusBtn.classList.toggle('running', running)
     if(lastMatch !== null) lastMatchEl.innerHTML = '<span class="found">'+lastMatch+'</span>'
@@ -273,7 +274,7 @@
       log(`>>> TREFFER! Zahl ${n} gefunden nach ${iterations} Iterationen.`, 'found')
       showHitCircle()
       updateUI(n)
-      if(stopOnMatch.checked) stop()
+      if(stopOnMatch.checked && running) stop()
       iterations = 0
       return true
     }
@@ -308,9 +309,7 @@
       }
       rafId = requestAnimationFrame(rafLoop)
     } else {
-      intervalId = setInterval(() => {
-        tickOnce()
-      }, Math.max(0, Number(speedInput.value)))
+      intervalId = setInterval(() => { tickOnce() }, Math.max(0, Number(speedInput.value)))
     }
     updateUI(lastEl.textContent)
   }
@@ -347,12 +346,12 @@
   startBtn.addEventListener('click', start)
   stopBtn.addEventListener('click', stop)
   resetBtn.addEventListener('click', reset)
+  singleBtn.addEventListener('click', () => tickOnce())
 
   window.addEventListener('keydown', (e) => {
     if(e.code === 'Space') { e.preventDefault(); running ? stop() : start() }
     if(e.key.toLowerCase() === 'r') { reset() }
   })
-
 })();
 </script>
 </body>
